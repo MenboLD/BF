@@ -3,35 +3,15 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>ユニット配置デバッグ</title>
+  <title>ユニット配置アプリ（最終・画像化なし）</title>
   <style>
     body {
+      font-family: sans-serif;
       margin: 0;
       padding: 0;
-    }
-    @media (max-width: 600px) {
-      #unit-list {
-        grid-template-columns: repeat(4, 56px);
-        gap: 6px;
-        justify-content: center;
-      }
-      .side-button {
-        font-size: 12px;
-        height: auto;
-        padding: 6px;
-      }
-      #image-toggle-btn {
-        width: 100px !important;
-        height: 36px !important;
-        font-size: 14px !important;
-      }
-    }
-    body {
-      font-family: sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin: 0;
     }
     #board-area {
       position: relative;
@@ -82,6 +62,18 @@
       height: 48px;
       cursor: grab;
     }
+    @media (max-width: 600px) {
+      #unit-list {
+        grid-template-columns: repeat(4, 56px);
+        gap: 6px;
+        justify-content: center;
+      }
+      .side-button {
+        font-size: 12px;
+        height: auto;
+        padding: 6px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -114,7 +106,6 @@
     function loadUnitSet() {
       unitList.innerHTML = "";
       const set = sets[currentSet];
-      console.log("🔄 表示セット:", set.name);
       for (let i = 1; i <= set.count; i++) {
         const img = document.createElement("img");
         const filename = `${set.name}_${String(i).padStart(2, '0')}.png`;
@@ -172,31 +163,5 @@
 
     window.addEventListener("DOMContentLoaded", loadUnitSet);
   </script>
-
-  <div id="button-area" style="margin: 20px 0;">
-    <button id="image-toggle-btn" style="
-      width: 120px;
-      height: 40px;
-      background: purple;
-      color: white;
-      font-weight: bold;
-      font-size: 16px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    ">画像化</button>
-  </div>
-  <script>
-    const toggleBtn = document.getElementById("image-toggle-btn");
-    toggleBtn.addEventListener("click", () => {
-      if (toggleBtn.textContent === "画像化") {
-        saveAsImage();
-        toggleBtn.textContent = "再編集";
-      } else {
-        toggleBtn.textContent = "画像化";
-      }
-    });
-  </script>
 </body>
-
 </html>
