@@ -1,0 +1,202 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ユニット配置デバッグ</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    @media (max-width: 600px) {
+      #unit-list {
+        grid-template-columns: repeat(4, 56px);
+        gap: 6px;
+        justify-content: center;
+      }
+      .side-button {
+        font-size: 12px;
+        height: auto;
+        padding: 6px;
+      }
+      #image-toggle-btn {
+        width: 100px !important;
+        height: 36px !important;
+        font-size: 14px !important;
+      }
+    }
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+    }
+    #board-area {
+      position: relative;
+      width: 360px;
+      margin-top: 20px;
+    }
+    #board {
+      width: 100%;
+      display: block;
+    }
+    .placed-unit {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      pointer-events: auto;
+    }
+    #unit-area {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 20px;
+      gap: 20px;
+    }
+    .side-button {
+      width: 40px;
+      height: 224px;
+      background-color: gold;
+      writing-mode: vertical-rl;
+      text-orientation: upright;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+    }
+    #unit-list {
+      display: grid;
+      grid-template-columns: repeat(5, 56px);
+      grid-template-rows: repeat(4, 56px);
+      gap: 8px;
+      background: #eee;
+      padding: 10px;
+      border: 1px solid #ccc;
+    }
+    .unit {
+      width: 48px;
+      height: 48px;
+      cursor: grab;
+    }
+  </style>
+</head>
+<body>
+  <div id="board-area">
+    <img id="board" src="盤面画像.png" alt="盤面">
+  </div>
+
+  <div id="unit-area">
+    <div class="side-button" onclick="changePage(-1)">左へ</div>
+    <div id="unit-list"></div>
+    <div class="side-button" onclick="changePage(1)">右へ</div>
+  </div>
+
+  <script>
+    const boardWrapper = document.getElementById("board-area");
+    const boardImg = document.getElementById("board");
+    const unitList = document.getElementById("unit-list");
+
+    const gridX = [40, 85, 130, 175, 220, 265, 332, 400];
+    const gridY = [35, 80, 125];
+    const placements = [];
+
+    let currentSet = 0;
+    const sets = [
+      { name: "A", count: 19 },
+      { name: "B", count: 19 },
+      { name: "C", count: 10 }
+    ];
+
+    function loadUnitSet() {
+      unitList.innerHTML = "";
+      const set = sets[currentSet];
+      console.log("🔄 表示セット:", set.name);
+      for (let i = 1; i <= set.count; i++) {
+        const img = document.createElement("img");
+        const filename = `${set.name}_${String(i).padStart(2, '0')}.png`;
+        img.src = filename;
+        img.className = "unit";
+        img.setAttribute("draggable", "true");
+        img.setAttribute("data-unit", filename);
+        img.addEventListener("dragstart", e => {
+          e.dataTransfer.setData("unit-src", filename);
+        });
+        unitList.appendChild(img);
+      }
+      for (let j = set.count + 1; j <= 20; j++) {
+        const filler = document.createElement("div");
+        unitList.appendChild(filler);
+      }
+    }
+
+    function changePage(dir) {
+      currentSet = (currentSet + dir + sets.length) % sets.length;
+      loadUnitSet();
+    }
+
+    function createPlacedUnit(unitSrc, x, y) {
+      const existing = placements.find(p => p.x === x && p.y === y);
+      if (existing) {
+        boardWrapper.removeChild(existing.el);
+        placements.splice(placements.indexOf(existing), 1);
+      }
+      const img = document.createElement("img");
+      img.src = unitSrc;
+      img.className = "placed-unit";
+      img.style.left = (x - 15) + "px";
+      img.style.top = (y - 15) + "px";
+      img.ondblclick = () => {
+        boardWrapper.removeChild(img);
+        const index = placements.findIndex(p => p.el === img);
+        if (index >= 0) placements.splice(index, 1);
+      };
+      placements.push({ el: img, src: unitSrc, x, y });
+      boardWrapper.appendChild(img);
+    }
+
+    boardWrapper.addEventListener("dragover", e => e.preventDefault());
+    boardWrapper.addEventListener("drop", e => {
+      e.preventDefault();
+      const rect = boardImg.getBoundingClientRect();
+      const offsetX = e.clientX - rect.left;
+      const offsetY = e.clientY - rect.top;
+      const nearestX = gridX.reduce((a, b) => Math.abs(b - offsetX) < Math.abs(a - offsetX) ? b : a);
+      const nearestY = gridY.reduce((a, b) => Math.abs(b - offsetY) < Math.abs(a - offsetY) ? b : a);
+      const src = e.dataTransfer.getData("unit-src");
+      createPlacedUnit(src, nearestX, nearestY);
+    });
+
+    window.addEventListener("DOMContentLoaded", loadUnitSet);
+  </script>
+
+  <div id="button-area" style="margin: 20px 0;">
+    <button id="image-toggle-btn" style="
+      width: 120px;
+      height: 40px;
+      background: purple;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    ">画像化</button>
+  </div>
+  <script>
+    const toggleBtn = document.getElementById("image-toggle-btn");
+    toggleBtn.addEventListener("click", () => {
+      if (toggleBtn.textContent === "画像化") {
+        saveAsImage();
+        toggleBtn.textContent = "再編集";
+      } else {
+        toggleBtn.textContent = "画像化";
+      }
+    });
+  </script>
+</body>
+
+</html>
